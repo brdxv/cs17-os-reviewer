@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cs17-os-reviewer",
+  "compatibility_date": "2026-09-07",
+  "assets": {
+    "directory": "."
+  }
+}

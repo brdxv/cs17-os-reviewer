@@ -1,0 +1,22 @@
+.git/
+.github/
+.wrangler/
+.playwright-cli/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.zip
+*.pdf
+*.ppt
+*.pptx
+
+# Local-only/development files
+run_reviewer.py
+start.bat
+start.command
+README.md
+README.txt
+.gitignore
+.assetsignore
+wrangler.jsonc
