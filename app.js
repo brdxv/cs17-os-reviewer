@@ -12,6 +12,8 @@
   const topAccuracy = document.getElementById('topAccuracy');
   const calcNav = document.getElementById('calcNav');
   const sidebar = document.getElementById('sidebar');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const menuToggle = document.getElementById('menuToggle');
   const toastEl = document.getElementById('toast');
 
   const loadedProgress = loadProgress();
@@ -261,6 +263,17 @@
     toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),2200);
   }
 
+  function setSidebarOpen(open) {
+    const mobile=window.innerWidth<=760;
+    const shouldOpen=mobile && !!open;
+    sidebar.classList.toggle('open',shouldOpen);
+    sidebarBackdrop?.classList.toggle('open',shouldOpen);
+    menuToggle?.setAttribute('aria-expanded',String(shouldOpen));
+    if (sidebarBackdrop) sidebarBackdrop.tabIndex=shouldOpen?0:-1;
+  }
+
+  function closeSidebar() { setSidebarOpen(false); }
+
   function setView(view) {
     state.view=allowedViews.has(view)?view:'dashboard';
     state.session=null;
@@ -270,7 +283,7 @@
     saveProgress();
     modeNav.querySelectorAll('.mode-button').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===state.view));
     render();
-    sidebar.classList.remove('open');
+    closeSidebar();
   }
 
   function setLesson(id) {
@@ -284,7 +297,7 @@
     saveProgress();
     renderNav();
     render();
-    sidebar.classList.remove('open');
+    closeSidebar();
   }
 
   function renderNav() {
@@ -594,48 +607,84 @@
         shell.style.animation='none';
       },{once:true});
     }
-    let startX=0, dx=0, dragging=false;
+    let startX=0, startY=0, dx=0, dy=0, dragging=false, gesture=null, startedAt=0, pointerType='mouse';
 
     shell.addEventListener('pointerdown',e=>{
       if (e.button!==undefined && e.button!==0) return;
       shell.classList.remove(...entryClasses);
       shell.style.animation='none';
-      dragging=true; startX=e.clientX; dx=0;
-      shell.classList.add('is-dragging');
-      shell.setPointerCapture?.(e.pointerId);
+      dragging=true;
+      gesture=null;
+      pointerType=e.pointerType||'mouse';
+      startX=e.clientX;
+      startY=e.clientY;
+      dx=0;
+      dy=0;
+      startedAt=performance.now();
       shell.style.transition='none';
     });
 
     shell.addEventListener('pointermove',e=>{
       if (!dragging) return;
       dx=e.clientX-startX;
-      const rotate=dx/30;
-      const progress=Math.min(1,Math.abs(dx)/140);
-      const scale=1-(progress*.018);
+      dy=e.clientY-startY;
+      const ax=Math.abs(dx), ay=Math.abs(dy);
+
+      if (!gesture && Math.max(ax,ay)>=7) {
+        if (ay>ax*1.15) {
+          gesture='vertical';
+          shell.style.transition='';
+          return;
+        }
+        if (ax>ay*1.05) {
+          gesture='horizontal';
+          shell.classList.add('is-dragging');
+          shell.setPointerCapture?.(e.pointerId);
+        }
+      }
+      if (gesture!=='horizontal') return;
+
+      e.preventDefault();
+      const rotate=dx/34;
+      const progress=Math.min(1,ax/125);
+      const scale=1-(progress*.014);
       shell.style.transform=`translateX(${dx}px) rotate(${rotate}deg) scale(${scale})`;
-      badRight.style.opacity=String(Math.min(1,Math.max(0,dx/105)));
-      badLeft.style.opacity=String(Math.min(1,Math.max(0,-dx/105))); 
-    });
+      badRight.style.opacity=String(Math.min(1,Math.max(0,dx/82)));
+      badLeft.style.opacity=String(Math.min(1,Math.max(0,-dx/82)));
+    },{passive:false});
 
     const endSwipe=e=>{
       if (!dragging) return;
       dragging=false;
+      const activeGesture=gesture;
+      gesture=null;
       shell.classList.remove('is-dragging');
-      shell.releasePointerCapture?.(e.pointerId);
-      const threshold=Math.min(110,Math.max(70,shell.clientWidth*.16));
-      if (Math.abs(dx)>=threshold) {
+      try { shell.releasePointerCapture?.(e.pointerId); } catch {}
+
+      if (activeGesture==='vertical') return;
+
+      const elapsed=Math.max(1,performance.now()-startedAt);
+      const velocity=Math.abs(dx)/elapsed;
+      const touchLike=pointerType==='touch' || pointerType==='pen';
+      const threshold=touchLike
+        ? Math.min(82,Math.max(48,shell.clientWidth*.12))
+        : Math.min(105,Math.max(62,shell.clientWidth*.14));
+      const flick=velocity>=.48 && Math.abs(dx)>=28;
+
+      if (activeGesture==='horizontal' && (Math.abs(dx)>=threshold || flick)) {
         const correct=dx>0;
         shell.classList.add(correct?'swipe-accepted-right':'swipe-accepted-left');
-        shell.style.transition='transform .34s cubic-bezier(.18,.72,.18,1), opacity .28s ease, filter .28s ease';
-        shell.style.transform=`translateX(${correct?'135%':'-135%'}) rotate(${correct?22:-22}deg) scale(.96)`;
+        shell.style.transition='transform .3s cubic-bezier(.18,.72,.18,1), opacity .24s ease, filter .24s ease';
+        shell.style.transform=`translateX(${correct?'135%':'-135%'}) rotate(${correct?20:-20}deg) scale(.97)`;
         shell.style.opacity='0';
         shell.style.filter='blur(1px)';
-        setTimeout(()=>rateFlashcardAndAdvance(c,correct?1:0,correct?'Correct':'Incorrect',correct?'after-right':'after-left'),300);
+        setTimeout(()=>rateFlashcardAndAdvance(c,correct?1:0,correct?'Correct':'Incorrect',correct?'after-right':'after-left'),255);
       } else {
-        const isTap=Math.abs(dx)<8;
-        shell.style.transition='transform .32s cubic-bezier(.22,.9,.28,1)';
+        const isTap=Math.abs(dx)<8 && Math.abs(dy)<8;
+        shell.style.transition='transform .26s cubic-bezier(.22,.9,.28,1)';
         shell.style.transform='translateX(0) rotate(0deg) scale(1)';
-        badLeft.style.opacity='0'; badRight.style.opacity='0';
+        badLeft.style.opacity='0';
+        badRight.style.opacity='0';
         if (isTap) {
           s.flipped=!s.flipped;
           card.classList.toggle('flipped',s.flipped);
@@ -984,7 +1033,9 @@
     state.progress=emptyProgress(); saveProgress(); state.session=null; state.view='dashboard'; render(); toast('All progress reset.');
   }
 
-  document.getElementById('menuToggle').addEventListener('click',()=>sidebar.classList.toggle('open'));
+  menuToggle?.setAttribute('aria-expanded','false');
+  menuToggle?.addEventListener('click',()=>setSidebarOpen(!sidebar.classList.contains('open')));
+  sidebarBackdrop?.addEventListener('click',closeSidebar);
   modeNav.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.view)));
   document.getElementById('resetLessonStatusBtn').addEventListener('click',resetLessonStatus);
   document.getElementById('resetProgressBtn').addEventListener('click',resetProgress);
@@ -992,10 +1043,9 @@
   document.getElementById('importProgressBtn').addEventListener('click',()=>document.getElementById('importProgressFile').click());
   document.getElementById('importProgressFile').addEventListener('change',e=>{const f=e.target.files?.[0]; if(f) importProgress(f); e.target.value='';});
 
-  // Close the mobile menu when the user taps outside it.
-  document.addEventListener('click',e=>{
-    if (window.innerWidth<=760 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target.id!=='menuToggle') sidebar.classList.remove('open');
-  });
+  // Keep the off-canvas menu independent from the reviewer's main scroll area.
+  document.addEventListener('keydown',e=>{ if (e.key==='Escape') closeSidebar(); });
+  window.addEventListener('resize',()=>{ if (window.innerWidth>760) closeSidebar(); });
 
   // Keep localhost simple and always load the current project files.
   // Remove older reviewer service workers/caches without touching localStorage progress.
