@@ -6,6 +6,8 @@ __pycache__/
 
 # Local progress backups
 cs17-review-progress-*.json
+local-progress-snapshot.json
+local-progress-snapshot.tmp
 
 # Archives and source lesson files should not be committed here
 *.zip

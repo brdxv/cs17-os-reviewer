@@ -3,6 +3,25 @@
 
   const STORAGE_KEY = 'cs17_os_reviewer_progress_v2';
   const APP_VERSION = 2;
+  const DEFAULT_DELETED_FLASHCARDS = Object.freeze({
+    l1: [
+      'l1_objectives',
+      'l1_user_priorities',
+      'l1_mobile_interfaces',
+      'l1_embedded_characteristics',
+      'l1_shared_memory',
+      'l1_controller_diagram',
+      'l1_isr',
+      'l1_interrupt_functions',
+      'l1_interrupt_driven_io',
+      'l1_io_waiting',
+      'l1_io_without_waiting',
+      'l1_rom',
+      'l1_eprom',
+      'l1_dedicated_shared',
+      'l1_os_origin'
+    ]
+  });
   const content = document.getElementById('content');
   const lessonNav = document.getElementById('lessonNav');
   const modeNav = document.getElementById('modeNav');
@@ -14,7 +33,11 @@
   const sidebar = document.getElementById('sidebar');
   const sidebarBackdrop = document.getElementById('sidebarBackdrop');
   const menuToggle = document.getElementById('menuToggle');
+  const saveLocalSnapshotBtn = document.getElementById('saveLocalSnapshotBtn');
+  const restoreLocalSnapshotBtn = document.getElementById('restoreLocalSnapshotBtn');
   const toastEl = document.getElementById('toast');
+  const IS_LOCAL_RUNNER = ['127.0.0.1','localhost'].includes(location.hostname) && location.port==='8765';
+  let localSnapshotTimer = null;
 
   const loadedProgress = loadProgress();
   const allowedViews = new Set(['dashboard','flashcards','identification','enumeration','multiple','calculations','mixed']);
@@ -28,6 +51,18 @@
     topicOpen: null,
   };
 
+  function defaultDeletedFlashcards() {
+    return Object.fromEntries(Object.entries(DEFAULT_DELETED_FLASHCARDS).map(([lessonId,ids])=>[lessonId,[...ids]]));
+  }
+
+  function applyDefaultDeletedFlashcards(deleted) {
+    deleted ||= {};
+    for (const [lessonId,ids] of Object.entries(DEFAULT_DELETED_FLASHCARDS)) {
+      if (!Object.prototype.hasOwnProperty.call(deleted,lessonId)) deleted[lessonId]=[...ids];
+    }
+    return deleted;
+  }
+
   function emptyProgress() {
     return {
       version: APP_VERSION,
@@ -39,7 +74,7 @@
       preferences: { flashcardFront: 'description' },
       ui: { lessonId: 'l1', view: 'dashboard' },
       resume: {},
-      deletedFlashcards: {},
+      deletedFlashcards: defaultDeletedFlashcards(),
     };
   }
 
@@ -55,7 +90,7 @@
       parsed.preferences ||= {};
       parsed.ui ||= {lessonId:'l1',view:'dashboard'};
       parsed.resume ||= {};
-      parsed.deletedFlashcards ||= {};
+      parsed.deletedFlashcards=applyDefaultDeletedFlashcards(parsed.deletedFlashcards);
       if (!['description','answer'].includes(parsed.preferences.flashcardFront)) parsed.preferences.flashcardFront='description';
       return parsed;
     } catch {
@@ -65,8 +100,70 @@
 
   function saveProgress() {
     state.progress.updatedAt = Date.now();
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress)); }
-    catch { toast('Could not save browser progress.'); }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+      scheduleLocalSnapshot();
+    } catch {
+      toast('Could not save browser progress.');
+    }
+  }
+
+  function scheduleLocalSnapshot() {
+    if (!IS_LOCAL_RUNNER) return;
+    clearTimeout(localSnapshotTimer);
+    localSnapshotTimer=setTimeout(()=>saveLocalSnapshot(false),300);
+  }
+
+  async function saveLocalSnapshot(showToast=true) {
+    if (!IS_LOCAL_RUNNER) return false;
+    try {
+      const response=await fetch('/__progress_snapshot',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(state.progress)
+      });
+      if (!response.ok) throw new Error('Snapshot save failed');
+      const result=await response.json();
+      if (showToast) toast(`Saved locally as ${result.file||'local-progress-snapshot.json'}.`);
+      return true;
+    } catch {
+      if (showToast) toast('Could not save the local progress snapshot. Restart start.bat and try again.');
+      return false;
+    }
+  }
+
+  function prepareImportedProgress(parsed) {
+    if (!parsed || parsed.version!==APP_VERSION || typeof parsed.conceptStats!=='object' || typeof parsed.questionStats!=='object') throw new Error('Invalid progress');
+    parsed.sessions ||= [];
+    parsed.preferences ||= {flashcardFront:'description'};
+    parsed.ui ||= {lessonId:'l1',view:'dashboard'};
+    parsed.resume ||= {};
+    parsed.deletedFlashcards=applyDefaultDeletedFlashcards(parsed.deletedFlashcards);
+    if (!['description','answer'].includes(parsed.preferences.flashcardFront)) parsed.preferences.flashcardFront='description';
+    return parsed;
+  }
+
+  function applyImportedProgress(parsed,message) {
+    parsed=prepareImportedProgress(parsed);
+    state.progress=parsed;
+    state.lessonId=parsed.ui.lessonId && LESSONS[parsed.ui.lessonId]?parsed.ui.lessonId:'l1';
+    state.view=allowedViews.has(parsed.ui.view)?parsed.ui.view:'dashboard';
+    saveProgress();
+    state.session=null;
+    render();
+    toast(message);
+  }
+
+  async function restoreLocalSnapshot() {
+    if (!IS_LOCAL_RUNNER) return;
+    try {
+      const response=await fetch('/__progress_snapshot',{cache:'no-store'});
+      if (!response.ok) throw new Error('No snapshot');
+      const parsed=await response.json();
+      applyImportedProgress(parsed,'Local progress snapshot restored.');
+    } catch {
+      toast('No valid local progress snapshot was found.');
+    }
   }
 
   function esc(value = '') {
@@ -917,13 +1014,36 @@
     document.getElementById('retryModeBtn').addEventListener('click',()=>setView(mode));
   }
 
-  function exportProgress() {
-    const blob=new Blob([JSON.stringify(state.progress,null,2)],{type:'application/json'});
+  async function exportProgress() {
+    const filename=`cs17-review-progress-${new Date().toISOString().slice(0,10)}.json`;
+    const text=JSON.stringify(state.progress,null,2);
+
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle=await window.showSaveFilePicker({
+          suggestedName:filename,
+          types:[{description:'JSON progress backup',accept:{'application/json':['.json']}}]
+        });
+        const writable=await handle.createWritable();
+        await writable.write(text);
+        await writable.close();
+        toast(`Saved ${filename}.`);
+        return;
+      } catch (err) {
+        if (err?.name==='AbortError') return;
+      }
+    }
+
+    const blob=new Blob([text],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download=`cs17-review-progress-${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast('Progress exported.');
+    a.href=url;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast(`Downloaded ${filename}.`);
   }
 
 
@@ -931,20 +1051,7 @@
     const reader=new FileReader();
     reader.onload=()=>{
       try {
-        const parsed=JSON.parse(reader.result);
-        if (!parsed || parsed.version!==APP_VERSION || typeof parsed.conceptStats!=='object' || typeof parsed.questionStats!=='object') throw new Error('Invalid file');
-        parsed.sessions ||= [];
-        parsed.preferences ||= {flashcardFront:'description'};
-        parsed.ui ||= {lessonId:'l1',view:'dashboard'};
-        parsed.resume ||= {};
-        parsed.deletedFlashcards ||= {};
-        state.progress=parsed;
-        state.lessonId=parsed.ui.lessonId && LESSONS[parsed.ui.lessonId]?parsed.ui.lessonId:'l1';
-        state.view=allowedViews.has(parsed.ui.view)?parsed.ui.view:'dashboard';
-        saveProgress();
-        state.session=null;
-        render();
-        toast('Progress imported.');
+        applyImportedProgress(JSON.parse(reader.result),'Progress imported.');
       } catch {
         toast('That file is not a valid CS17 progress backup.');
       }
@@ -1043,6 +1150,13 @@
   document.getElementById('importProgressBtn').addEventListener('click',()=>document.getElementById('importProgressFile').click());
   document.getElementById('importProgressFile').addEventListener('change',e=>{const f=e.target.files?.[0]; if(f) importProgress(f); e.target.value='';});
 
+  if (IS_LOCAL_RUNNER) {
+    saveLocalSnapshotBtn.hidden=false;
+    restoreLocalSnapshotBtn.hidden=false;
+    saveLocalSnapshotBtn.addEventListener('click',()=>saveLocalSnapshot(true));
+    restoreLocalSnapshotBtn.addEventListener('click',restoreLocalSnapshot);
+  }
+
   // Keep the off-canvas menu independent from the reviewer's main scroll area.
   document.addEventListener('keydown',e=>{ if (e.key==='Escape') closeSidebar(); });
   window.addEventListener('resize',()=>{ if (window.innerWidth>760) closeSidebar(); });
@@ -1061,4 +1175,5 @@
   }
 
   render();
+  if (IS_LOCAL_RUNNER) setTimeout(()=>saveLocalSnapshot(false),500);
 })();
