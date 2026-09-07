@@ -1,0 +1,20 @@
+# Local/test artifacts
+.playwright-cli/
+__pycache__/
+*.pyc
+*.pyo
+
+# Local progress backups
+cs17-review-progress-*.json
+
+# Archives and source lesson files should not be committed here
+*.zip
+*.ppt
+*.pptx
+*.pdf
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>CS17 OS Reviewer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">OS</div>
+        <div>
+          <div class="brand-title">CS17 Reviewer</div>
+          <div class="brand-sub">Operating Systems</div>
+        </div>
+      </div>
+
+      <div class="sidebar-label">LESSON</div>
+      <div id="lessonNav" class="lesson-nav"></div>
+
+      <div class="sidebar-label">STUDY MODE</div>
+      <nav class="mode-nav" id="modeNav">
+        <button data-view="dashboard" class="mode-button active"><span>⌂</span> Dashboard</button>
+        <button data-view="flashcards" class="mode-button"><span>▣</span> Flashcards</button>
+        <button data-view="identification" class="mode-button"><span>⌨</span> Identification</button>
+        <button data-view="enumeration" class="mode-button"><span>≡</span> Enumeration</button>
+        <button data-view="multiple" class="mode-button"><span>☑</span> Multiple Answer</button>
+        <button data-view="calculations" class="mode-button" id="calcNav"><span>∑</span> Scheduling Drills</button>
+        <button data-view="mixed" class="mode-button"><span>⤨</span> Mixed Practice</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="text-button" id="resetLessonStatusBtn">Reset lesson status</button>
+        <button class="text-button" id="resetProgressBtn">Reset all progress</button>
+        <button class="text-button" id="exportProgressBtn">Export progress</button>
+        <button class="text-button" id="importProgressBtn">Import progress</button>
+        <input type="file" id="importProgressFile" accept="application/json" hidden />
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">☰</button>
+        <div>
+          <div class="eyebrow" id="lessonEyebrow">LESSON 1</div>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="mini-stat"><span id="topMastered">0/0</span><small>Correct</small></div>
+          <div class="mini-stat"><span id="topAccuracy">0%</span><small>Overall</small></div>
+        </div>
+      </header>
+
+      <section class="content" id="content"></section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="lesson1.js"></script>
+  <script src="lesson2-visuals.js"></script>
+  <script src="lesson2.js"></script>
+  <script src="lesson3-visuals.js"></script>
+  <script src="lesson3.js"></script>
+  <script src="lesson4-visuals.js"></script>
+  <script src="lesson4.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
