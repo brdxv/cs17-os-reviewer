@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.server
 import json
 import os
+import shutil
 import socketserver
 import threading
 import time
@@ -13,6 +14,7 @@ import webbrowser
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PORT = 8765  # Keep this fixed so browser localStorage stays on the same origin.
 SNAPSHOT_FILE = os.path.join(ROOT, "local-progress-snapshot.json")
+SNAPSHOT_BACKUP = os.path.join(ROOT, "local-progress-snapshot.backup.json")
 SNAPSHOT_TMP = os.path.join(ROOT, "local-progress-snapshot.tmp")
 MAX_SNAPSHOT_BYTES = 5 * 1024 * 1024
 os.chdir(ROOT)
@@ -66,6 +68,8 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
             with open(SNAPSHOT_TMP, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, indent=2, ensure_ascii=False)
                 fh.write("\n")
+            if os.path.exists(SNAPSHOT_FILE):
+                shutil.copy2(SNAPSHOT_FILE, SNAPSHOT_BACKUP)
             os.replace(SNAPSHOT_TMP, SNAPSHOT_FILE)
             self._send_json(200, {"ok": True, "file": os.path.basename(SNAPSHOT_FILE)})
         except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError):

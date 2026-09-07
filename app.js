@@ -583,14 +583,29 @@
     return `<figure class="flash-visual"><img src="${esc(visual.src)}" alt="${esc(alt)}" draggable="false" />${caption?`<figcaption>${esc(caption)}</figcaption>`:''}</figure>`;
   }
 
+  function flashDensityClass(c,kind) {
+    const visual=c.visual?.src && (c.visual.side==='both' || (c.visual.side||'answer')===kind);
+    const points=kind==='description'?(c.points||[]):[];
+    const chars=kind==='description'
+      ? String(c.definition||'').length + points.reduce((sum,p)=>sum+String(p).length,0)
+      : String(c.term||'').length;
+    const weight=chars + (points.length*70) + (visual?180:0);
+    if (weight>=1050 || points.length>=8) return 'flash-extra-dense';
+    if (weight>=650 || points.length>=5) return 'flash-dense';
+    return 'flash-standard';
+  }
+
   function flashFace(c, kind, isBack=false) {
     const reveal = kind==='description' ? 'answer' : 'description';
+    const visual=flashVisual(c,kind);
+    const density=flashDensityClass(c,kind);
+    const visualClass=visual?' has-visual':'';
     if (kind==='description') {
       const definition=maskAnswerText(c,c.definition||'');
       const points=(c.points||[]).map(point=>maskAnswerText(c,point));
-      return `<div class="flash-face ${isBack?'flash-back':''} flash-description-face"><div class="flash-label">DESCRIPTION · ${esc(c.source||'')}</div>${flashVisual(c,'description')}${definition?`<p class="flash-definition">${esc(definition)}</p>`:''}${points.length?`<ul class="flash-points">${points.map(point=>`<li>${esc(point)}</li>`).join('')}</ul>`:''}<div class="flash-hint">Tap/click to reveal ${reveal}</div></div>`;
+      return `<div class="flash-face ${isBack?'flash-back':''} flash-description-face ${density}${visualClass}"><div class="flash-label">DESCRIPTION · ${esc(c.source||'')}</div><div class="flash-face-scroll"><div class="flash-face-content">${visual}${definition?`<p class="flash-definition">${esc(definition)}</p>`:''}${points.length?`<ul class="flash-points">${points.map(point=>`<li>${esc(point)}</li>`).join('')}</ul>`:''}</div></div><div class="flash-hint">Tap/click to reveal ${reveal}</div></div>`;
     }
-    return `<div class="flash-face ${isBack?'flash-back':''} flash-answer-face"><div class="flash-label">ANSWER · ${esc(c.source||'')}</div><h2>${esc(c.term)}</h2>${flashVisual(c,'answer')}<div class="flash-hint">Tap/click to reveal ${reveal}</div></div>`;
+    return `<div class="flash-face ${isBack?'flash-back':''} flash-answer-face ${density}${visualClass}"><div class="flash-label">ANSWER · ${esc(c.source||'')}</div><div class="flash-face-scroll"><div class="flash-face-content"><h2>${esc(c.term)}</h2>${visual}</div></div><div class="flash-hint">Tap/click to reveal ${reveal}</div></div>`;
   }
 
   function moveFlashcard(delta, animation='') {
@@ -1175,5 +1190,4 @@
   }
 
   render();
-  if (IS_LOCAL_RUNNER) setTimeout(()=>saveLocalSnapshot(false),500);
 })();

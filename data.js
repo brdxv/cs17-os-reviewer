@@ -65,7 +65,7 @@ function buildLesson(config) {
       term: g.cardTerm || g.title,
       aliases: g.aliases || [],
       definition: g.cardDefinition || '',
-      points: g.answers.map(canonicalAnswer),
+      points: (g.cardPoints ?? g.answers).map(canonicalAnswer),
       source: g.source,
       visual: g.visual || null,
       concepts: g.concepts,

@@ -5,8 +5,9 @@ buildLesson({
   subtitle: 'Operating-system basics, computer-system structure, interrupts, I/O structure, and computer startup',
   sourceLabel: 'CS 17 Lesson 1',
   sourceNotes: [
-    'Lesson 1 was rescanned slide-by-slide from the source PDF. Bold terms are treated as review keywords when they carry instructional meaning.',
-    'Visual information was also checked. The abstract component diagram on Slide 7, device-controller diagram on Slide 12, interrupt timeline on Slide 17, and interrupt-driven I/O cycle on Slide 23 are included in the reviewer.',
+    'Lesson 1 was re-audited slide-by-slide against CS-17-LESSON-1(2).pdf. Slide text, emphasized terms, and visual labels are treated as the source authority.',
+    'Visual information was checked again. The abstract component diagram on Slide 7, computer-system organization diagram on Slide 12, interrupt timeline on Slide 17, and interrupt-driven I/O cycle on Slide 23 now have offline visual reconstructions in the reviewer.',
+    'The Slide 17 graph also visibly labels the repeated event sequence I/O request, transfer done, interrupt signaled, and interrupt handled. Slides 18-19 provide the detailed descriptions for those events.',
     'Slide 22 contains an embedded/video screenshot under How CPU Handles Interrupts but no additional readable lesson statements in the PDF, so the reviewer does not invent content from that video.'
   ],
   concepts: [
@@ -34,6 +35,12 @@ buildLesson({
       id: 'l1_hardware', order: 601, term: 'Hardware', source: 'Slide 6',
       definition: 'Hardware provides basic computing resources.',
       identPrompt: 'Which computer-system component provides basic computing resources?'
+    },
+    {
+      id: 'l1_os_structure_role', order: 601.5, term: 'Operating System', aliases: ['OS'], source: 'Slide 6',
+      definition: 'Controls And Coordinates Use Of Hardware Among Various Applications And Users.',
+      visual: { src: LESSON1_VISUALS.abstractView, side: 'answer', alt: 'Abstract component view showing the operating system between application programs and computer hardware', caption: 'Slide 7 visual reinforcement' },
+      identPrompt: 'Which computer-system component controls and coordinates use of hardware among various applications and users?'
     },
     {
       id: 'l1_app_programs', order: 602, term: 'Application Programs', aliases: ['Application Program'], source: 'Slide 6',
@@ -91,23 +98,27 @@ buildLesson({
       identPrompt: 'What memory is accessed by one or more CPUs and device controllers through the common bus?'
     },
     {
-      id: 'l1_system_bus', order: 1202.5, term: 'System Bus', source: 'Slide 12 diagram (OCR/visual scan)',
+      id: 'l1_system_bus', order: 1202.5, term: 'System Bus', source: 'Slide 12 diagram (visual scan)',
       definition: 'The diagram labels the connection shared by the CPU, disk controller, USB controller, graphics adapter, and memory as the system bus.',
+      visual: { src: LESSON1_VISUALS.computerOrganization, side: 'answer', alt: 'Computer system organization showing CPU and device controllers connected through the system bus to memory', caption: 'Slide 12 visual reconstruction' },
       identPrompt: 'What is the shared connection labeled beneath the CPU and device controllers in the Slide 12 diagram?'
     },
     {
-      id: 'l1_disk_controller', order: 1203, term: 'Disk Controller', source: 'Slide 12 diagram (OCR)',
+      id: 'l1_disk_controller', order: 1203, term: 'Disk Controller', source: 'Slide 12 diagram (visual scan)',
       definition: 'The computer-system organization diagram shows disks connected through a disk controller to the system bus.',
+      visual: { src: LESSON1_VISUALS.computerOrganization, side: 'answer', alt: 'Computer system organization diagram with disks connected to the disk controller', caption: 'Slide 12 visual reconstruction' },
       identPrompt: 'Which controller in the Slide 12 diagram connects the disks to the system bus?'
     },
     {
-      id: 'l1_usb_controller', order: 1204, term: 'USB Controller', source: 'Slide 12 diagram (OCR)',
+      id: 'l1_usb_controller', order: 1204, term: 'USB Controller', source: 'Slide 12 diagram (visual scan)',
       definition: 'The computer-system organization diagram shows the mouse, keyboard, and printer connected through a USB controller to the system bus.',
+      visual: { src: LESSON1_VISUALS.computerOrganization, side: 'answer', alt: 'Computer system organization diagram with mouse, keyboard, and printer connected to the USB controller', caption: 'Slide 12 visual reconstruction' },
       identPrompt: 'Which controller in the Slide 12 diagram connects the mouse, keyboard, and printer to the system bus?'
     },
     {
-      id: 'l1_graphics_adapter', order: 1205, term: 'Graphics Adapter', source: 'Slide 12 diagram (OCR)',
+      id: 'l1_graphics_adapter', order: 1205, term: 'Graphics Adapter', source: 'Slide 12 diagram (visual scan)',
       definition: 'The computer-system organization diagram shows the monitor connected through a graphics adapter to the system bus.',
+      visual: { src: LESSON1_VISUALS.computerOrganization, side: 'answer', alt: 'Computer system organization diagram with the monitor connected to the graphics adapter', caption: 'Slide 12 visual reconstruction' },
       identPrompt: 'Which component in the Slide 12 diagram connects the monitor to the system bus?'
     },
     {
@@ -153,11 +164,13 @@ buildLesson({
     {
       id: 'l1_io_request', order: 1801, term: 'I/O Request', source: 'Slide 18',
       definition: 'I/O request: the program requests an I/O operation such as reading a file or receiving keyboard input.',
+      points: ['The I/O device starts transferring data.', 'The CPU does not wait; it continues running the user program.'],
       identPrompt: 'What step occurs when the program requests an I/O operation such as reading a file or receiving keyboard input?'
     },
     {
       id: 'l1_transfer_progress', order: 1802, term: 'Transfer in Progress', source: 'Slide 18',
       definition: 'Transfer in progress: while the device is busy transferring data, the CPU is still executing other instructions.',
+      points: ['This allows both the CPU and the I/O device to work at the same time, improving efficiency.'],
       identPrompt: 'What step occurs while the device is busy transferring data and the CPU is still executing other instructions?'
     },
     {
@@ -173,6 +186,7 @@ buildLesson({
     {
       id: 'l1_interrupt_handled', order: 1902, term: 'Interrupt Handled', source: 'Slide 19',
       definition: 'Interrupt handled: the CPU briefly pauses the user program and executes the interrupt service routine (ISR) to process the completed I/O.',
+      points: ['Once finished, the CPU immediately resumes the user program.'],
       identPrompt: 'What step occurs when the CPU briefly pauses the user program and executes the ISR to process the completed I/O?'
     },
     {
@@ -196,13 +210,15 @@ buildLesson({
       identPrompt: 'What is stored together with the registers to preserve the state of the CPU?'
     },
     {
-      id: 'l1_io_controller', order: 2301, term: 'I/O Controller', source: 'Slide 23 diagram (OCR)',
+      id: 'l1_io_controller', order: 2301, term: 'I/O Controller', source: 'Slide 23 diagram (visual scan)',
       definition: 'In the interrupt-driven I/O cycle, the I/O controller initiates I/O.',
+      visual: { src: LESSON1_VISUALS.interruptDrivenIO, side: 'answer', alt: 'Interrupt-driven I/O cycle showing the CPU and I/O controller actions', caption: 'Slide 23 visual reconstruction' },
       identPrompt: 'What controller initiates I/O in the Slide 23 interrupt-driven I/O cycle?'
     },
     {
-      id: 'l1_interrupt_handler', order: 2302, term: 'Interrupt Handler', source: 'Slide 23 diagram (OCR)',
+      id: 'l1_interrupt_handler', order: 2302, term: 'Interrupt Handler', source: 'Slide 23 diagram (visual scan)',
       definition: 'The interrupt handler processes data and returns from interrupt.',
+      visual: { src: LESSON1_VISUALS.interruptDrivenIO, side: 'answer', alt: 'Interrupt-driven I/O cycle showing the interrupt handler step', caption: 'Slide 23 visual reconstruction' },
       identPrompt: 'What processes data and returns from interrupt in the Slide 23 diagram?'
     },
     {
@@ -276,6 +292,7 @@ buildLesson({
       prompt: 'Enumerate the four components into which a computer system can be divided.',
       answers: ['Hardware', 'Operating System', 'Application Programs', 'Users'],
       distractors: ['Middleware', 'Interrupt Vector'],
+      visual: { src: LESSON1_VISUALS.abstractView, side: 'answer', alt: 'Four-layer abstract view with user, application programs, operating system, and computer hardware', caption: 'Slide 7 visual reinforcement of the four computer-system components' },
       concepts: ['l1_hardware', 'l1_os', 'l1_app_programs', 'l1_users']
     },
     {
@@ -309,6 +326,9 @@ buildLesson({
         'Computer hardware (CPU, memory, I/O devices, etc.)'
       ],
       distractors: ['Interrupt vector', 'Device-status table'],
+      cardDefinition: 'Use the diagram to identify this PPT topic, then recall the four layers from top to bottom.',
+      cardPoints: [],
+      visual: { src: LESSON1_VISUALS.abstractView, side: 'description', alt: 'Abstract view showing user above application programs, operating system, and computer hardware', caption: 'Slide 7 visual reconstruction' },
       concepts: ['l1_users', 'l1_app_programs', 'l1_os', 'l1_hardware']
     },
     {
@@ -378,10 +398,11 @@ buildLesson({
         'Concurrent execution of CPUs and devices competing for memory cycles'
       ],
       distractors: ['At most one I/O request is outstanding at a time'],
+      visual: { src: LESSON1_VISUALS.computerOrganization, side: 'answer', alt: 'Computer system organization showing CPU, disk controller, USB controller, graphics adapter, system bus, and memory', caption: 'Slide 12 visual reconstruction' },
       concepts: ['l1_common_bus', 'l1_shared_memory', 'l1_system_bus', 'l1_device_controller']
     },
     {
-      id: 'l1_controller_diagram', order: 1206, title: 'Device Controller Diagram', cardTerm: 'Device Controller Diagram Mappings', source: 'Slide 12 diagram (OCR/visual scan)',
+      id: 'l1_controller_diagram', order: 1206, title: 'Device Controller Diagram', cardTerm: 'Device Controller Diagram Mappings', source: 'Slide 12 diagram (visual scan)',
       prompt: 'Enumerate the device-to-controller mappings shown in the Slide 12 diagram.',
       answers: [
         'Disks - Disk controller',
@@ -391,6 +412,9 @@ buildLesson({
         'Monitor - Graphics adapter'
       ],
       distractors: ['Monitor - Disk controller', 'Disks - Graphics adapter'],
+      cardDefinition: 'Use the diagram to identify the device-to-controller mappings shown on Slide 12.',
+      cardPoints: [],
+      visual: { src: LESSON1_VISUALS.computerOrganization, side: 'description', alt: 'Device-controller mappings for disks, mouse, keyboard, printer, and monitor', caption: 'Slide 12 visual reconstruction' },
       concepts: ['l1_system_bus', 'l1_disk_controller', 'l1_usb_controller', 'l1_graphics_adapter']
     },
     {
@@ -443,6 +467,9 @@ buildLesson({
         'Bottom line (I/O device): Low = I/O device is transferring data'
       ],
       distractors: ['Top line (CPU): Low = CPU is idle'],
+      cardDefinition: 'Use the two timelines and their event markers to identify this graph. The repeated markers are I/O request, transfer done, interrupt signaled, and interrupt handled.',
+      cardPoints: [],
+      visual: { src: LESSON1_VISUALS.interruptTimeline, side: 'description', alt: 'Interrupt timeline showing CPU user-program and interrupt-processing states against I/O device idle and transferring states', caption: 'Slide 17 visual reconstruction' },
       concepts: ['l1_interrupt']
     },
     {
@@ -476,7 +503,7 @@ buildLesson({
       concepts: ['l1_registers', 'l1_program_counter', 'l1_interrupt']
     },
     {
-      id: 'l1_interrupt_driven_io', order: 2303, title: 'Interrupt-Drive I/O Cycle', cardTerm: 'Interrupt-Drive I/O Cycle', aliases: ['Interrupt-Driven I/O Cycle'], source: 'Slide 23 diagram (OCR/visual scan)',
+      id: 'l1_interrupt_driven_io', order: 2303, title: 'Interrupt-Drive I/O Cycle', cardTerm: 'Interrupt-Drive I/O Cycle', aliases: ['Interrupt-Driven I/O Cycle'], source: 'Slide 23 diagram (visual scan)',
       prompt: 'Enumerate the labeled actions in the Interrupt-Drive I/O Cycle diagram.',
       answers: [
         'Device driver initiates I/O',
@@ -488,6 +515,9 @@ buildLesson({
         'CPU resumes processing of interrupted task'
       ],
       distractors: ['CPU stops permanently after the interrupt'],
+      cardDefinition: 'Use the CPU and I/O-controller flow to identify this cycle and recall the numbered actions.',
+      cardPoints: [],
+      visual: { src: LESSON1_VISUALS.interruptDrivenIO, side: 'description', alt: 'Interrupt-driven I/O cycle with numbered CPU and I/O controller actions', caption: 'Slide 23 visual reconstruction' },
       concepts: ['l1_device_driver', 'l1_io_controller', 'l1_interrupt_handler', 'l1_interrupt']
     },
     {
