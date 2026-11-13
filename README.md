@@ -1,5 +1,13 @@
 # CS17 Operating Systems Reviewer
 
+An interactive, local-only study and exam reviewer for **CS 17: Operating Systems** (BS Computer Science, University of Rizal System – Morong). It turns lesson material into flashcards, graded drills, and adaptive practice that tracks mastery per concept.
+
+**Tech:** HTML, CSS, vanilla JavaScript, Service Worker caching, browser localStorage, and a small Python launcher (`run_reviewer.py`). There's no backend or database.
+
+**Author:** Ian Kurt G. Valencia
+
+---
+
 A local-only exam reviewer built from the three supplied CS17 lessons:
 
 - **Lesson 2:** Roles of Operating Systems in Computing
